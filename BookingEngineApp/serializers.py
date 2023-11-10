@@ -13,3 +13,9 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     def save(self, **kwargs):
         self.validated_data['password'] = make_password(self.validated_data['password'])
         super().save(**kwargs)
+
+
+# User Login
+class UserLoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
