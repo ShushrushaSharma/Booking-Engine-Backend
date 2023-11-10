@@ -11,4 +11,24 @@ class UserRegistration(AbstractUser):
 def __str__(self):
         return self.username
 
+# Upload Rooms Models
 
+class Facility(models.Model):
+    name = models.CharField(max_length=100)
+
+    class Meta:
+         verbose_name = "Facility"
+         verbose_name_plural = "Facilities"
+
+class Room(models.Model):
+    number = models.IntegerField(primary_key=True)
+    price = models.IntegerField() 
+    type = models.CharField(max_length=100)
+    description = models.TextField()
+    facility = models.ManyToManyField(Facility)
+    is_booked = models.BooleanField(default=False)
+   
+class RoomImage(models.Model):
+    number = models.ForeignKey(Room,on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='rooms_images/')
+    
