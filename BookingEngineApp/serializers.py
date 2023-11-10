@@ -38,3 +38,10 @@ class RoomImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomImage
         fields = "__all__"
+
+
+# Reset Password
+
+class ResetPasswordSerializer(serializers.Serializer):
+    oldpassword = serializers.CharField(required = True)
+    newpassword = serializers.CharField(required = True)

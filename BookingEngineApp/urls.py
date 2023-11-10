@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import UserRegister, UserLogin, AddRooms, ShowRooms, UpdateRooms, DeleteRooms, ViewPersonalDetails, UpdatePersonalDetails
+from .views import UserRegister, UserLogin, AddRooms, ShowRooms, UpdateRooms, DeleteRooms, ViewPersonalDetails, UpdatePersonalDetails, ResetPassword
 
 urlpatterns = [
     path('register/', UserRegister.as_view(), name = "register"),
@@ -12,4 +12,6 @@ urlpatterns = [
 
     path('viewpersonaldetails/<int:id>/',ViewPersonalDetails.as_view(),name="view_personal_details"),
     path('updatepersonaldetails/<int:id>/',UpdatePersonalDetails.as_view(),name="update_personal_details"),
+
+    path('resetpassword/',ResetPassword.as_view(),name="reset_password")
 ]
