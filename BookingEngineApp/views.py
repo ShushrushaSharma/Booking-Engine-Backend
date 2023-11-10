@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from BookingEngineApp.models import Room, UserRegistration
 from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 class UserRegister(APIView):
 
@@ -77,3 +78,14 @@ class DeleteRooms(APIView):
         rooms = get_object_or_404(Room, number = pk)
         rooms.delete()
         return Response("Deleted Successfully")
+
+
+# View User Details
+
+class ViewPersonalDetails(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self,request,id):
+        userregistration = get_object_or_404(UserRegistration,id = id)
+        serializer = UserRegisterSerializer(userregistration, many = False)
+        return Response(serializer.data)
+    
