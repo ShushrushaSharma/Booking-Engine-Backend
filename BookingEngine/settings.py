@@ -27,6 +27,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+#Custom User Model
+AUTH_USER_MODEL = "BookingEngineApp.UserRegistration"
 
 # Application definition
 
