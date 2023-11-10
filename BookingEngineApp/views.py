@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth import authenticate
 from rest_framework.decorators import APIView
-from BookingEngineApp.serializers import UserRegisterSerializer, UserLoginSerializer, RoomSerializer
+from BookingEngineApp.serializers import UserRegisterSerializer, UserLoginSerializer, RoomSerializer, ResetPasswordSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from BookingEngineApp.models import Room, UserRegistration
@@ -102,3 +102,18 @@ class UpdatePersonalDetails(APIView):
             return Response(serializer.data, status=200)
         return Response(serializer.errors, status=400)    
     
+
+# Reset your Password
+
+class ResetPassword(APIView):
+    def post(self,request):
+        serializer = ResetPasswordSerializer(data = request.data)
+        if serializer.is_valid():
+            # retriving user associated with this request
+            user = request.user
+            if user.check_password(serializer.data.get('oldpassword')):
+                user.set_password(serializer.data.get('newpassword'))
+                user.save()
+                return Response({'message': 'Password changed successfully.'}, status=200)
+            return Response({'error': 'Invalid Old Password'}, status=400)
+        return Response(serializer.errors, status=400)
