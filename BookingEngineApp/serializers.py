@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
-from BookingEngineApp.models import UserRegistration, Facility, Room, RoomImage
+from BookingEngineApp.models import UserRegistration, Facility, Room, RoomImage, Package
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -45,3 +45,10 @@ class RoomImageSerializer(serializers.ModelSerializer):
 class ResetPasswordSerializer(serializers.Serializer):
     oldpassword = serializers.CharField(required = True)
     newpassword = serializers.CharField(required = True)
+
+# Package
+
+class PackageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Package
+        fields = "__all__"

@@ -31,4 +31,11 @@ class Room(models.Model):
 class RoomImage(models.Model):
     number = models.ForeignKey(Room,on_delete=models.CASCADE)
     image = models.ImageField(upload_to='rooms_images/')
-    
+
+# Upload Package Backend
+
+class Package(models.Model):
+     type = models.CharField(max_length=100)
+     overview = models.TextField()
+     description = models.TextField()
+     is_booked = models.BooleanField(default=True)
