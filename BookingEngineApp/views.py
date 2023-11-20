@@ -79,8 +79,16 @@ class DeleteRooms(APIView):
         rooms.delete()
         return Response("Deleted Successfully")
 
-
 # View User Details
+
+class ViewUserDetails(APIView):
+    permission_classes = [IsAdminUser]
+    def get(self,request):
+        userregistration = UserRegistration.objects.all()
+        serializer = UserRegisterSerializer(userregistration, many = True)
+        return Response(serializer.data)
+
+# View Personal Details
 
 class ViewPersonalDetails(APIView):
     permission_classes = [IsAuthenticated]
@@ -88,7 +96,6 @@ class ViewPersonalDetails(APIView):
         userregistration = get_object_or_404(UserRegistration,id = id)
         serializer = UserRegisterSerializer(userregistration, many = False)
         return Response(serializer.data)
-
 
 # Update Personal Details
 
