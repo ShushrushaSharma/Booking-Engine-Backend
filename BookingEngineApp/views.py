@@ -1,12 +1,16 @@
 from django.shortcuts import render
 from django.contrib.auth import authenticate
 from rest_framework.decorators import APIView
-from BookingEngineApp.serializers import UserRegisterSerializer, UserLoginSerializer, RoomSerializer, ResetPasswordSerializer, PackageSerializer
+from BookingEngineApp.serializers import UserRegisterSerializer, UserLoginSerializer, RoomSerializer, ResetPasswordSerializer, PackageSerializer, VerifyAccountSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from BookingEngineApp.models import Room, UserRegistration, Package
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from BookingEngineApp.emails import send_otp_via_email
+
+
+# User Register
 
 class UserRegister(APIView):
 
@@ -14,11 +18,57 @@ class UserRegister(APIView):
         serializer = UserRegisterSerializer(data = request.data)
         if serializer.is_valid():
             serializer.save()
+            send_otp_via_email(serializer.data['email'])
             return Response(serializer.data, status= 201)
         return Response(serializer.errors, status=400)
 
 
+# Verify OTP
+
+class VerifyOTP(APIView):
+
+    def post(self,request):
+        serializer = VerifyAccountSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.data['email']
+            otp = serializer.data['otp']
+
+            user = UserRegistration.objects.filter(email=email)
+            if not user.exists():
+                return Response(
+                    {
+                        'status':'400',
+                        'message':'Invalid Email'
+                    }
+                )
+            
+            if user[0].otp != otp:
+                return Response(
+                    {
+                        'status':'400',
+                        'message':'Invalid OTP'
+                    }
+                )
+                
+            user = user.first()
+            user.is_verified = True
+            user.save()
+            return Response(
+                    {
+                        'status':'200',
+                        'message':'account verified'
+                    }
+                )
+
+        return Response(
+                    {
+                        'status':'400',
+                        'data': serializer.errors
+                    }
+                )
+
 # User Login
+
 class UserLogin(APIView):
 
     def post(self,request):
