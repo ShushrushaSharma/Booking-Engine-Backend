@@ -1,8 +1,9 @@
 from django.urls import path
-from .views import UserRegister, UserLogin, AddRooms, ShowRooms, UpdateRooms, DeleteRooms, ViewUserDetails, ViewPersonalDetails, UpdatePersonalDetails, ResetPassword, AddPackage, ShowPackage, UpdatePackage, DeletePackage
+from .views import UserRegister, UserLogin, AddRooms, ShowRooms, UpdateRooms, DeleteRooms, ViewUserDetails, ViewPersonalDetails, UpdatePersonalDetails, ResetPassword, AddPackage, ShowPackage, UpdatePackage, DeletePackage, VerifyOTP
 
 urlpatterns = [
     path('register/', UserRegister.as_view(), name = "register"),
+    path('verifyotp/',VerifyOTP.as_view(),name="verify_otp"),
     path('login/',UserLogin.as_view(),name="login"),
 
     path('addrooms/',AddRooms.as_view(),name="add_rooms"),

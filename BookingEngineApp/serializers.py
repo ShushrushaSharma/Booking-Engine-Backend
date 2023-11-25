@@ -4,11 +4,13 @@ from django.contrib.auth.hashers import make_password
 from BookingEngineApp.models import UserRegistration, Facility, Room, RoomImage, Package
 
 
+# User Register 
+
 class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserRegistration
         # declearing fields to serialize 
-        fields = ['username', 'email' , 'first_name', 'last_name', 'password']
+        fields = ['username', 'email' , 'first_name', 'last_name', 'password','is_verified']
 
     # encrypting the password
     def save(self, **kwargs):
@@ -16,7 +18,15 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         super().save(**kwargs)
 
 
+# Verify Account
+
+class VerifyAccountSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField()
+
+
 # User Login
+
 class UserLoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()

@@ -7,6 +7,8 @@ class UserRegistration(AbstractUser):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     password = models.CharField(max_length=100)
+    is_verified = models.BooleanField(default=False)
+    otp = models.CharField(max_length=4, null=True)
 
 def __str__(self):
         return self.username
