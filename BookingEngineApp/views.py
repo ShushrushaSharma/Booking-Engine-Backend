@@ -1,10 +1,10 @@
 from django.shortcuts import render
 from django.contrib.auth import authenticate
 from rest_framework.decorators import APIView
-from BookingEngineApp.serializers import UserRegisterSerializer, UserLoginSerializer, RoomSerializer, ResetPasswordSerializer, PackageSerializer, VerifyAccountSerializer
+from BookingEngineApp.serializers import UserRegisterSerializer, UserLoginSerializer, RoomSerializer, ResetPasswordSerializer, PackageSerializer, VerifyAccountSerializer, BookingSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from BookingEngineApp.models import Room, UserRegistration, Package
+from BookingEngineApp.models import Room, RoomCategory, UserRegistration, Package, Booking
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from BookingEngineApp.emails import send_otp_via_email
@@ -210,3 +210,33 @@ class DeletePackage(APIView):
         package = get_object_or_404(Package, id=id)
         package.delete()
         return Response("Deleted Successfully")       
+    
+
+# Book Rooms
+
+class BookRooms(APIView):
+
+    def post(self,request):
+        serializer = BookingSerializer(data=request.data)
+        if serializer.is_valid():
+            room_type = serializer.data['type']
+            check_in = serializer.data['check_in']
+            check_out = serializer.data['check_out']
+
+            room = Room.objects.filter(type = room_type).filter(is_booked = False).first()
+            if not room:
+                return Response({'message': 'No rooms of the specified category found.'})
+
+            booking = Booking.objects.create(
+                username = self.request.user,
+                type = RoomCategory.objects.get(id = room_type),
+                room = room,
+                check_in = check_in,
+                check_out = check_out
+            )
+            booking.save()
+            room.is_booked = True
+            room.save()
+
+            return Response({'message': f'Room {room} booked successfully.'})
+        return Response(serializer.errors, status=400)
