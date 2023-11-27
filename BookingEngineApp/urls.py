@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import UserRegister, UserLogin, AddRooms, ShowRooms, UpdateRooms, DeleteRooms, ViewUserDetails, ViewPersonalDetails, UpdatePersonalDetails, ResetPassword, AddPackage, ShowPackage, UpdatePackage, DeletePackage, VerifyOTP
+from .views import UserRegister, UserLogin, AddRooms, ShowRooms, UpdateRooms, DeleteRooms, ViewUserDetails, ViewPersonalDetails, UpdatePersonalDetails, ResetPassword, AddPackage, ShowPackage, UpdatePackage, DeletePackage, VerifyOTP, BookRooms
 
 urlpatterns = [
     path('register/', UserRegister.as_view(), name = "register"),
@@ -22,6 +22,8 @@ urlpatterns = [
     path('showpackage/',ShowPackage.as_view(),name="show_package"),
     path('updatepackage/<int:id>/',UpdatePackage.as_view(),name="update_package"),
     path('deletepackage/<int:id>/',DeletePackage.as_view(),name="delete_package"),
+
+    path('bookrooms/',BookRooms.as_view(),name="book_rooms")
 
 ]
 
