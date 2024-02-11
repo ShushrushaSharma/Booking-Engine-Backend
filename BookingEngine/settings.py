@@ -10,10 +10,18 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 import environ
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 env = environ.Env()
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+READ_DOT_ENV_FILE = env.bool('DJANGO_READ_DOT_ENV_FILE',default=True)
+if READ_DOT_ENV_FILE:
+    env.read_env(str(BASE_DIR/'.env'))
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -45,11 +53,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'BookingEngineApp',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -146,3 +156,8 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'bookingengine.mails@gmail.com'  
 EMAIL_HOST_PASSWORD = 'vrepovowfvtuzpre'  
 EMAIL_USE_TLS = True
+
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
