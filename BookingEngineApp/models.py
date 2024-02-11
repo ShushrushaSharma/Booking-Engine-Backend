@@ -5,6 +5,12 @@ from django.db import models
 #  User Registration Model
 
 class UserRegistration(AbstractUser):
+
+    ROLE_CHOICES = (
+        ('admin', 'Admin'),
+        ('user', 'User')
+    )
+
     username = models.CharField(max_length=100,unique=True)
     email = models.EmailField()
     first_name = models.CharField(max_length=100)
@@ -12,8 +18,9 @@ class UserRegistration(AbstractUser):
     password = models.CharField(max_length=100)
     is_verified = models.BooleanField(default=False)
     otp = models.CharField(max_length=4, null=True)
+    role = models.CharField(max_length=15, choices=ROLE_CHOICES, default='user')
 
-def __str__(self):
+    def __str__(self):
         return self.username
 
 

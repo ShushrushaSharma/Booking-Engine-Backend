@@ -24,6 +24,4 @@ urlpatterns = [
     path('deletepackage/<int:id>/',DeletePackage.as_view(),name="delete_package"),
 
     path('bookrooms/',BookRooms.as_view(),name="book_rooms")
-
 ]
-

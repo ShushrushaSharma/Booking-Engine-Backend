@@ -84,12 +84,16 @@ class UserLogin(APIView):
             if user is None:
                 return Response("Invalid Credentials", status=400)
             
+            # checking user role
+            role = user.role
+            
             refresh = RefreshToken.for_user(user)
 
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-            })
+                'role': role,
+            }, status=200)
         
         return Response(serializer.errors, status=400)
     
