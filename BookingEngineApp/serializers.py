@@ -10,7 +10,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserRegistration
         # declearing fields to serialize 
-        fields = ['username', 'email' , 'first_name', 'last_name', 'password','is_verified']
+        fields = ['username', 'email' , 'first_name', 'last_name', 'password']
 
     # encrypting the password
     def save(self, **kwargs):

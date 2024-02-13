@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth import authenticate
 from rest_framework.decorators import APIView
+from BookingEngineApp.models import UserRegistration
 from BookingEngineApp.serializers import UserRegisterSerializer, UserLoginSerializer, RoomSerializer, ResetPasswordSerializer, PackageSerializer, VerifyAccountSerializer, BookingSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -83,6 +84,9 @@ class UserLogin(APIView):
 
             if user is None:
                 return Response("Invalid Credentials", status=400)
+            
+            if not user.is_verified:
+                return Response("Verify your account", status=401)
             
             # checking user role
             role = user.role
