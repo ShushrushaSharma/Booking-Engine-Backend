@@ -10,13 +10,21 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserRegistration
         # declearing fields to serialize 
-        fields = ['username', 'email' , 'first_name', 'last_name', 'password']
+        fields = ['username', 'email' , 'first_name', 'last_name', 'password','profile_picture']
 
     # encrypting the password
     def save(self, **kwargs):
         self.validated_data['password'] = make_password(self.validated_data['password'])
         super().save(**kwargs)
 
+
+# Update Profile Picture
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserRegistration
+        fields = ['username', 'email' , 'first_name', 'last_name','profile_picture']
+    
 
 # Verify Account
 

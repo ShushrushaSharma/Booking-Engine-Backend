@@ -19,6 +19,7 @@ class UserRegistration(AbstractUser):
     is_verified = models.BooleanField(default=False)
     otp = models.CharField(max_length=4, null=True)
     role = models.CharField(max_length=15, choices=ROLE_CHOICES, default='user')
+    profile_picture = models.ImageField(upload_to="profile_images/", blank=True, null=True, default="profile_images/defaultimage.png")
 
     def __str__(self):
         return self.username
@@ -69,6 +70,7 @@ class Package(models.Model):
 
      def __str__(self):
         return self.type
+
 
 # Book Rooms Models
 

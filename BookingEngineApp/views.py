@@ -2,7 +2,8 @@ from django.shortcuts import render
 from django.contrib.auth import authenticate
 from rest_framework.decorators import APIView
 from BookingEngineApp.models import UserRegistration
-from BookingEngineApp.serializers import UserRegisterSerializer, UserLoginSerializer, RoomSerializer, ResetPasswordSerializer, PackageSerializer, VerifyAccountSerializer, BookingSerializer
+from BookingEngineApp.serializers import UserRegisterSerializer, UserLoginSerializer, RoomSerializer, ResetPasswordSerializer, PackageSerializer, \
+     VerifyAccountSerializer, BookingSerializer, ProfileSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from BookingEngineApp.models import Room, RoomCategory, UserRegistration, Package, Booking
@@ -149,19 +150,20 @@ class ViewUserDetails(APIView):
 # View Personal Details
 
 class ViewPersonalDetails(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
     def get(self,request,id):
         userregistration = get_object_or_404(UserRegistration,id = id)
         serializer = UserRegisterSerializer(userregistration, many = False)
         return Response(serializer.data)
+    
 
 # Update Personal Details
 
 class UpdatePersonalDetails(APIView):
 
-    def put(self,request,id):
-        useregisrtation = get_object_or_404(UserRegistration,id=id)
-        serializer = UserRegisterSerializer(instance = useregisrtation, data = request.data)
+    def patch(self,request,id):
+        userregistration = get_object_or_404(UserRegistration,id=id)
+        serializer = ProfileSerializer(instance = userregistration, data = request.data, partial = True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=200)
@@ -248,3 +250,4 @@ class BookRooms(APIView):
 
             return Response({'message': f'Room {room} booked successfully.'})
         return Response(serializer.errors, status=400)
+

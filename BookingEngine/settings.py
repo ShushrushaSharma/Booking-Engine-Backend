@@ -135,20 +135,15 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Media Files
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# EMAIL_BACKEND = env(
-#     "DJANGO_EMAIL_BACKEND",
-#     default="django.core.mail.backends.smtp.EmailBackend",
-# )
-# EMAIL_HOST = env("DJANGO_EMAIL_HOST", default="")
-# EMAIL_PORT = env("DJANGO_EMAIL_PORT", default="")
-# EMAIL_USE_TLS = env.bool("DJANGO_EMAIL_USE_TLS", default=False)
-# EMAIL_HOST_USER = env("DJANGO_EMAIL_HOST_USER", default="")
-# EMAIL_HOST_PASSWORD = env("DJANGO_EMAIL_HOST_PASSWORD", default="")
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
