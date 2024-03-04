@@ -3,10 +3,10 @@ from django.contrib.auth import authenticate
 from rest_framework.decorators import APIView
 from BookingEngineApp.models import UserRegistration
 from BookingEngineApp.serializers import UserRegisterSerializer, UserLoginSerializer, RoomSerializer, ResetPasswordSerializer, PackageSerializer, \
-     VerifyAccountSerializer, BookingSerializer, ProfileSerializer
+     VerifyAccountSerializer, BookingSerializer, ProfileSerializer, RoomCategorySerializer, FacilitySerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from BookingEngineApp.models import Room, RoomCategory, UserRegistration, Package, Booking
+from BookingEngineApp.models import Room, RoomCategory, Facility, UserRegistration, Package, Booking
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from BookingEngineApp.emails import send_otp_via_email
@@ -69,6 +69,7 @@ class VerifyOTP(APIView):
                     }
                 )
 
+
 # User Login
 
 class UserLogin(APIView):
@@ -101,7 +102,50 @@ class UserLogin(APIView):
             }, status=200)
         
         return Response(serializer.errors, status=400)
+
+
+# Upload Rooms Categories in admin panel
+
+class AddRoomsCategory(APIView):
+
+    def post(self, request):
+        serializer = RoomCategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+class ShowRoomsCategory(APIView):
+
+    def get(self,request):
+        roomscategory = RoomCategory.objects.all()
+        serializer = RoomCategorySerializer(roomscategory, many = True)
+        return Response(serializer.data)
     
+class ShowSpecificRoomsCategory(APIView):
+
+    def get(self,request,pk):
+        roomscategory = get_object_or_404(RoomCategory, id=pk)
+        serializer = RoomCategorySerializer(roomscategory, many = False)
+        return Response(serializer.data)
+   
+class UpdateRoomsCategory(APIView):
+
+    def patch(self,request,pk):
+        roomscategory = get_object_or_404(RoomCategory,id = pk)
+        serializer = RoomCategorySerializer(instance = roomscategory, data = request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=200)
+        return Response(serializer.errors, status=400)
+
+class DeleteRoomsCategory(APIView):
+
+    def delete(self,request,pk):
+        roomscategory = get_object_or_404(RoomCategory, id = pk)
+        roomscategory.delete()
+        return Response("Deleted Successfully")
+
 
 # Upload Rooms in admin panel
 
@@ -120,10 +164,17 @@ class ShowRooms(APIView):
         rooms = Room.objects.all()
         serializer = RoomSerializer(rooms, many = True)
         return Response(serializer.data)
+
+class ShowSpecificRoom(APIView):
+
+    def get(self,request,pk):
+        rooms = get_object_or_404(Room, number=pk)
+        serializer = RoomSerializer(rooms, many = False)
+        return Response(serializer.data)
    
 class UpdateRooms(APIView):
 
-    def put(self,request,pk):
+    def patch(self,request,pk):
         rooms = get_object_or_404(Room,number = pk)
         serializer = RoomSerializer(instance = rooms, data = request.data)
         if serializer.is_valid():
@@ -138,14 +189,60 @@ class DeleteRooms(APIView):
         rooms.delete()
         return Response("Deleted Successfully")
 
+
+# Upload Facilities in admin panel
+
+class AddFacilities(APIView):
+
+    def post(self,request):
+        serializer = FacilitySerializer(data = request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+class ShowFacilities(APIView):
+
+    def get(self,request):
+        facilities = Facility.objects.all()
+        serializer = FacilitySerializer(facilities, many = True)
+        return Response(serializer.data)
+   
+class UpdateFacilities(APIView):
+
+    def patch(self,request,pk):
+        facilities = get_object_or_404(Facility,id = pk)
+        serializer = FacilitySerializer(instance = facilities, data = request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=200)
+        return Response(serializer.errors, status=400)
+
+class DeleteFacilities(APIView):
+
+    def delete(self,request,pk):
+        facilities = get_object_or_404(Facility, id = pk)
+        facilities.delete()
+        return Response("Deleted Successfully")
+
+
 # View User Details
 
 class ViewUserDetails(APIView):
-    permission_classes = [IsAdminUser]
+    # permission_classes = [IsAdminUser]
     def get(self,request):
         userregistration = UserRegistration.objects.all()
         serializer = UserRegisterSerializer(userregistration, many = True)
         return Response(serializer.data)
+
+
+class DeleteUserDetails(APIView):
+    # permission_classes = [IsAdminUser]
+    def delete(self,request,id):
+        userregistration = get_object_or_404(UserRegistration, id=id)
+        userregistration.delete()
+        return Response("Deleted Successfully")
+
 
 # View Personal Details
 
@@ -203,10 +300,17 @@ class ShowPackage(APIView):
         package = Package.objects.all()
         serializer = PackageSerializer(package, many=True)
         return Response(serializer.data,status=200)
+
+class ShowSpecificPackage(APIView):
+
+    def get(self,request,id):
+        package = get_object_or_404(Package, id=id)
+        serializer = PackageSerializer(package, many = False)
+        return Response(serializer.data)
     
 class UpdatePackage(APIView):
 
-    def put(self,request,id):
+    def patch(self,request,id):
         package = get_object_or_404(Package, id=id)
         serializer = PackageSerializer(instance=package, data=request.data)
         if serializer.is_valid():
@@ -250,4 +354,3 @@ class BookRooms(APIView):
 
             return Response({'message': f'Room {room} booked successfully.'})
         return Response(serializer.errors, status=400)
-

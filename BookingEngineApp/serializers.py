@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
-from BookingEngineApp.models import UserRegistration, Facility, Room, RoomImage, Package, Booking
+from BookingEngineApp.models import UserRegistration, Facility, Room, RoomCategory, Package, Booking
 
 
 # User Register 
@@ -47,14 +47,14 @@ class FacilitySerializer(serializers.ModelSerializer):
         model = Facility
         fields = "__all__"
 
+class RoomCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RoomCategory
+        fields = "__all__"
+
 class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
-        fields = "__all__"
-
-class RoomImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RoomImage
         fields = "__all__"
 
 

@@ -28,7 +28,7 @@ class UserRegistration(AbstractUser):
 # Upload Rooms Model
 
 class Facility(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100,unique=True)
 
     class Meta:
          verbose_name = "Facility"
@@ -37,28 +37,32 @@ class Facility(models.Model):
     def __str__(self):
         return self.name
 
+
 class RoomCategory(models.Model):
-     type = models.CharField(max_length=100)
+     type = models.CharField(max_length=100, unique=True)
+     image = models.ImageField(upload_to='category_images/')
+     description = models.TextField()
 
      class Meta:
          verbose_name = "Room Category"
          verbose_name_plural = "Room Categories"
+    
+     def __str__(self):
+        return self.type
+
 
 class Room(models.Model):
     number = models.IntegerField(primary_key=True)
     price = models.IntegerField() 
+    name = models.CharField(max_length=100,unique=True)
     type = models.ForeignKey(RoomCategory,on_delete=models.CASCADE, null = True)
-    description = models.TextField()
+    image = models.ImageField(upload_to='rooms_images/')
     facility = models.ManyToManyField(Facility)
     is_booked = models.BooleanField(default=False)
 
     def __str__(self):
-        return str(self.number)
+        return str(self.name)
    
-class RoomImage(models.Model):
-    number = models.ForeignKey(Room,on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='rooms_images/')
-
 
 # Upload Package Backend
 
@@ -66,7 +70,7 @@ class Package(models.Model):
      type = models.CharField(max_length=100)
      overview = models.TextField()
      description = models.TextField()
-     is_booked = models.BooleanField(default=True)
+     is_booked = models.BooleanField(default=False)
 
      def __str__(self):
         return self.type
