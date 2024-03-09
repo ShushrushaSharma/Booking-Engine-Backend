@@ -57,7 +57,7 @@ class Room(models.Model):
     name = models.CharField(max_length=100,unique=True)
     type = models.ForeignKey(RoomCategory,on_delete=models.CASCADE, null = True)
     image = models.ImageField(upload_to='rooms_images/')
-    facility = models.ManyToManyField(Facility)
+    facility = models.ManyToManyField(Facility, related_name='rooms')
     is_booked = models.BooleanField(default=False)
 
     def __str__(self):
@@ -87,3 +87,15 @@ class Booking(models.Model):
 
      def __str__(self):
         return str(self.room)
+     
+
+# Contact Models
+
+class Contact(models.Model):
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length = 100) 
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+
+    def __str__(self):
+        return str(self.first_name)

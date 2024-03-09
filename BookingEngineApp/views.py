@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate
 from rest_framework.decorators import APIView
 from BookingEngineApp.models import UserRegistration
 from BookingEngineApp.serializers import UserRegisterSerializer, UserLoginSerializer, RoomSerializer, ResetPasswordSerializer, PackageSerializer, \
-     VerifyAccountSerializer, BookingSerializer, ProfileSerializer, RoomCategorySerializer, FacilitySerializer
+     VerifyAccountSerializer, BookingSerializer, ProfileSerializer, RoomCategorySerializer, FacilitySerializer, ContactSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from BookingEngineApp.models import Room, RoomCategory, Facility, UserRegistration, Package, Booking
@@ -133,7 +133,7 @@ class UpdateRoomsCategory(APIView):
 
     def patch(self,request,pk):
         roomscategory = get_object_or_404(RoomCategory,id = pk)
-        serializer = RoomCategorySerializer(instance = roomscategory, data = request.data)
+        serializer = RoomCategorySerializer(instance = roomscategory, data = request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=200)
@@ -176,7 +176,7 @@ class UpdateRooms(APIView):
 
     def patch(self,request,pk):
         rooms = get_object_or_404(Room,number = pk)
-        serializer = RoomSerializer(instance = rooms, data = request.data)
+        serializer = RoomSerializer(instance = rooms, data = request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=200)
@@ -231,17 +231,17 @@ class DeleteFacilities(APIView):
 class ViewUserDetails(APIView):
     # permission_classes = [IsAdminUser]
     def get(self,request):
-        userregistration = UserRegistration.objects.all()
+        userregistration = UserRegistration.objects.exclude(email__endswith = '@admin.com')
         serializer = UserRegisterSerializer(userregistration, many = True)
         return Response(serializer.data)
 
 
-class DeleteUserDetails(APIView):
-    # permission_classes = [IsAdminUser]
-    def delete(self,request,id):
-        userregistration = get_object_or_404(UserRegistration, id=id)
-        userregistration.delete()
-        return Response("Deleted Successfully")
+# class DeleteUserDetails(APIView):
+#     # permission_classes = [IsAdminUser]
+#     def delete(self,request,id):
+#         userregistration = get_object_or_404(UserRegistration, id=id)
+#         userregistration.delete()
+#         return Response("Deleted Successfully")
 
 
 # View Personal Details
@@ -323,8 +323,19 @@ class DeletePackage(APIView):
     def delete(self,request,id):
         package = get_object_or_404(Package, id=id)
         package.delete()
-        return Response("Deleted Successfully")       
-    
+        return Response("Deleted Successfully")  
+
+
+# Contact-Us
+
+class Contact(APIView):
+
+    def post(self,request):
+        serializer = ContactSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
 
 # Book Rooms
 

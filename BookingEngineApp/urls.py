@@ -1,8 +1,8 @@
 from django.urls import path
 from .views import UserRegister, UserLogin, AddRooms, ShowRooms, UpdateRooms, DeleteRooms, ViewUserDetails, ViewPersonalDetails, UpdatePersonalDetails, \
 ResetPassword, AddPackage, ShowPackage, UpdatePackage, DeletePackage, VerifyOTP, BookRooms, AddRoomsCategory, UpdateRoomsCategory, ShowRoomsCategory, \
-DeleteRoomsCategory, AddFacilities, ShowFacilities, DeleteFacilities, UpdateFacilities, ShowSpecificRoomsCategory, ShowSpecificRoom, DeleteUserDetails, \
-ShowSpecificPackage
+DeleteRoomsCategory, AddFacilities, ShowFacilities, DeleteFacilities, UpdateFacilities, ShowSpecificRoomsCategory, ShowSpecificRoom, \
+ShowSpecificPackage, Contact
 
 urlpatterns = [
     path('register/', UserRegister.as_view(), name = "register"),
@@ -27,7 +27,6 @@ urlpatterns = [
     path('deletefacilities/<int:pk>/',DeleteFacilities.as_view(),name="delete_facilities"),
 
     path('viewuserdetails/',ViewUserDetails.as_view(),name="view_user_details"),
-    path('deleteuserdetails/<int:id>/',DeleteUserDetails.as_view(),name="delete_user_details"),
 
     path('viewpersonaldetails/<int:id>/',ViewPersonalDetails.as_view(),name="view_personal_details"),
     path('updatepersonaldetails/<int:id>/',UpdatePersonalDetails.as_view(),name="update_personal_details"),
@@ -39,6 +38,8 @@ urlpatterns = [
     path('updatepackage/<int:id>/',UpdatePackage.as_view(),name="update_package"),
     path('deletepackage/<int:id>/',DeletePackage.as_view(),name="delete_package"),
     path('showspecificpackage/<int:id>/',ShowSpecificPackage.as_view(),name="showspecific_package"),
+
+    path('addcontact/',Contact.as_view(),name="add_contact"),
 
     path('bookrooms/',BookRooms.as_view(),name="book_rooms")
 ]
