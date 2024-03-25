@@ -6,11 +6,6 @@ from django.db import models
 
 class UserRegistration(AbstractUser):
 
-    ROLE_CHOICES = (
-        ('admin', 'Admin'),
-        ('user', 'User')
-    )
-
     username = models.CharField(max_length=100,unique=True)
     email = models.EmailField()
     first_name = models.CharField(max_length=100)
@@ -18,7 +13,7 @@ class UserRegistration(AbstractUser):
     password = models.CharField(max_length=100)
     is_verified = models.BooleanField(default=False)
     otp = models.CharField(max_length=4, null=True)
-    role = models.CharField(max_length=15, choices=ROLE_CHOICES, default='user')
+    role = models.CharField(max_length=15, default='user')
     profile_picture = models.ImageField(upload_to="profile_images/", blank=True, null=True, default="profile_images/defaultimage.png")
 
     def __str__(self):
@@ -58,7 +53,9 @@ class Room(models.Model):
     type = models.ForeignKey(RoomCategory,on_delete=models.CASCADE, null = True)
     image = models.ImageField(upload_to='rooms_images/')
     facility = models.ManyToManyField(Facility, related_name='rooms')
-    is_booked = models.BooleanField(default=False)
+    sleeps = models.IntegerField()
+    credits_received = models.IntegerField()
+    credits_required = models.IntegerField()
 
     def __str__(self):
         return str(self.name)
@@ -70,6 +67,8 @@ class Package(models.Model):
      type = models.CharField(max_length=100)
      overview = models.TextField()
      description = models.TextField()
+     credits_received = models.IntegerField()
+     credits_required = models.IntegerField()
      is_booked = models.BooleanField(default=False)
 
      def __str__(self):
@@ -80,13 +79,19 @@ class Package(models.Model):
 
 class Booking(models.Model):
      username = models.ForeignKey(UserRegistration,on_delete=models.CASCADE)
-     type = models.ForeignKey(RoomCategory,on_delete=models.CASCADE)
-     room = models.ForeignKey(Room,on_delete=models.CASCADE, null=True)
+     name = models.ForeignKey(Room,on_delete=models.CASCADE, null=True)
      check_in = models.DateField()
      check_out = models.DateField()
+     adult = models.IntegerField()
+     children = models.IntegerField()
+     occupancy = models.IntegerField()
+     total_price = models.IntegerField()
+     grand_total = models.IntegerField()
+     booking_rewards = models.IntegerField()
+     booking_credits = models.IntegerField()
 
      def __str__(self):
-        return str(self.room)
+        return str(self.name)
      
 
 # Contact Models

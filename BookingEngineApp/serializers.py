@@ -55,7 +55,7 @@ class RoomCategorySerializer(serializers.ModelSerializer):
 class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
-        fields = "__all__"
+        fields = ['number', 'price', 'name', 'type', 'image', 'facility', 'sleeps']
 
 
 # Reset Password
@@ -87,4 +87,4 @@ class BookingSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Booking
-        fields = ['type','check_in','check_out']
+        fields = ['name','check_in','check_out', 'adult', 'children']

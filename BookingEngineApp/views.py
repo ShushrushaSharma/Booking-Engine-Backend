@@ -10,6 +10,8 @@ from BookingEngineApp.models import Room, RoomCategory, Facility, UserRegistrati
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from BookingEngineApp.emails import send_otp_via_email
+from rest_framework import status
+from datetime import datetime
 
 
 # User Register
@@ -90,15 +92,13 @@ class UserLogin(APIView):
             if not user.is_verified:
                 return Response("Verify your account", status=401)
             
-            # checking user role
-            role = user.role
-            
             refresh = RefreshToken.for_user(user)
 
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-                'role': role,
+                'is_admin': user.is_superuser,
+                'id': user.id
             }, status=200)
         
         return Response(serializer.errors, status=400)
@@ -115,13 +115,15 @@ class AddRoomsCategory(APIView):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
+
 class ShowRoomsCategory(APIView):
 
     def get(self,request):
         roomscategory = RoomCategory.objects.all()
         serializer = RoomCategorySerializer(roomscategory, many = True)
         return Response(serializer.data)
-    
+
+
 class ShowSpecificRoomsCategory(APIView):
 
     def get(self,request,pk):
@@ -129,6 +131,7 @@ class ShowSpecificRoomsCategory(APIView):
         serializer = RoomCategorySerializer(roomscategory, many = False)
         return Response(serializer.data)
    
+
 class UpdateRoomsCategory(APIView):
 
     def patch(self,request,pk):
@@ -138,6 +141,7 @@ class UpdateRoomsCategory(APIView):
             serializer.save()
             return Response(serializer.data, status=200)
         return Response(serializer.errors, status=400)
+
 
 class DeleteRoomsCategory(APIView):
 
@@ -151,12 +155,24 @@ class DeleteRoomsCategory(APIView):
 
 class AddRooms(APIView):
 
-    def post(self,request):
-        serializer = RoomSerializer(data = request.data)
+    def post(self, request):
+        serializer = RoomSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+
+            # extracting validated data
+            price = serializer.validated_data['price'] 
+            sleeps = serializer.validated_data['sleeps']
+
+            # calculating booking rewards and required points for loyalty
+            credits_received = price / 2
+            credits_required = price * sleeps
+
+            # saving data with calculated credit points
+            serializer.save(credits_received=credits_received, credits_required=credits_required)
+            
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
+
 
 class ShowRooms(APIView):
 
@@ -165,6 +181,7 @@ class ShowRooms(APIView):
         serializer = RoomSerializer(rooms, many = True)
         return Response(serializer.data)
 
+
 class ShowSpecificRoom(APIView):
 
     def get(self,request,pk):
@@ -172,6 +189,7 @@ class ShowSpecificRoom(APIView):
         serializer = RoomSerializer(rooms, many = False)
         return Response(serializer.data)
    
+
 class UpdateRooms(APIView):
 
     def patch(self,request,pk):
@@ -181,6 +199,7 @@ class UpdateRooms(APIView):
             serializer.save()
             return Response(serializer.data, status=200)
         return Response(serializer.errors, status=400)
+
 
 class DeleteRooms(APIView):
 
@@ -201,6 +220,7 @@ class AddFacilities(APIView):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
+
 class ShowFacilities(APIView):
 
     def get(self,request):
@@ -208,6 +228,7 @@ class ShowFacilities(APIView):
         serializer = FacilitySerializer(facilities, many = True)
         return Response(serializer.data)
    
+
 class UpdateFacilities(APIView):
 
     def patch(self,request,pk):
@@ -217,6 +238,7 @@ class UpdateFacilities(APIView):
             serializer.save()
             return Response(serializer.data, status=200)
         return Response(serializer.errors, status=400)
+
 
 class DeleteFacilities(APIView):
 
@@ -234,14 +256,6 @@ class ViewUserDetails(APIView):
         userregistration = UserRegistration.objects.exclude(email__endswith = '@admin.com')
         serializer = UserRegisterSerializer(userregistration, many = True)
         return Response(serializer.data)
-
-
-# class DeleteUserDetails(APIView):
-#     # permission_classes = [IsAdminUser]
-#     def delete(self,request,id):
-#         userregistration = get_object_or_404(UserRegistration, id=id)
-#         userregistration.delete()
-#         return Response("Deleted Successfully")
 
 
 # View Personal Details
@@ -294,12 +308,14 @@ class AddPackage(APIView):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     
+
 class ShowPackage(APIView):
 
     def get(self,request):
         package = Package.objects.all()
         serializer = PackageSerializer(package, many=True)
         return Response(serializer.data,status=200)
+
 
 class ShowSpecificPackage(APIView):
 
@@ -308,6 +324,7 @@ class ShowSpecificPackage(APIView):
         serializer = PackageSerializer(package, many = False)
         return Response(serializer.data)
     
+
 class UpdatePackage(APIView):
 
     def patch(self,request,id):
@@ -318,6 +335,7 @@ class UpdatePackage(APIView):
             return Response(serializer.data, status=200)
         return Response(serializer.errors, status=400)
     
+
 class DeletePackage(APIView):
 
     def delete(self,request,id):
@@ -337,31 +355,82 @@ class Contact(APIView):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
+
 # Book Rooms
 
 class BookRooms(APIView):
 
-    def post(self,request):
+    def post(self, request):
         serializer = BookingSerializer(data=request.data)
         if serializer.is_valid():
-            room_type = serializer.data['type']
+            room_name = serializer.data['name']
             check_in = serializer.data['check_in']
             check_out = serializer.data['check_out']
+            adult = serializer.data['adult']
+            children = serializer.data['children']
 
-            room = Room.objects.filter(type = room_type).filter(is_booked = False).first()
-            if not room:
-                return Response({'message': 'No rooms of the specified category found.'})
+            # checking if checkout date is before checkin date
+
+            if check_out < check_in:
+                return Response({'message': 'Checkout date must be after check-in date.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                room = Room.objects.get(number=room_name)
+            except Room.DoesNotExist:
+                return Response({'message': 'Specified room cannot be found or is already booked.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if not self.is_room_available(room, check_in, check_out):
+                return Response({'message': 'Specified room is not available for the given dates.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # calculating price with the duration of stay
+
+            check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
+            check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
+            duration_of_stay = (check_out_date - check_in_date).days
+
+            total_price = room.price * duration_of_stay
+
+            grand_total = total_price + (13/100 * total_price)
+
+            # calculating occupancy
+
+            occupancy = adult + children
+
+            # booking rewards and booking credits for a room
+
+            booking_rewards = room.credits_received
+            booking_credits = room.credits_required
+
+            # creating bookings
 
             booking = Booking.objects.create(
-                username = self.request.user,
-                type = RoomCategory.objects.get(id = room_type),
-                room = room,
-                check_in = check_in,
-                check_out = check_out
+                username=self.request.user,
+                name=room,
+                check_in=check_in,
+                check_out=check_out,
+                adult=adult,
+                children=children,
+                occupancy=occupancy,
+                total_price=total_price,
+                grand_total=grand_total,
+                booking_rewards=booking_rewards,
+                booking_credits=booking_credits
             )
+
             booking.save()
-            room.is_booked = True
             room.save()
 
-            return Response({'message': f'Room {room} booked successfully.'})
-        return Response(serializer.errors, status=400)
+            return Response({'message': f'Room {room} booked successfully.'}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # checking the available rooms with the sepecific dates
+
+    def is_room_available(self, room, check_in, check_out):
+        check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
+        check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
+
+        booking_list = Booking.objects.filter(name=room)
+        for booking in booking_list:
+            if booking.check_in < check_out_date and booking.check_out > check_in_date:
+                return False
+        return True
