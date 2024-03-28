@@ -2,7 +2,7 @@ from django.urls import path
 from .views import UserRegister, UserLogin, AddRooms, ShowRooms, UpdateRooms, DeleteRooms, ViewUserDetails, ViewPersonalDetails, UpdatePersonalDetails, \
 ResetPassword, AddPackage, ShowPackage, UpdatePackage, DeletePackage, VerifyOTP, BookRooms, AddRoomsCategory, UpdateRoomsCategory, ShowRoomsCategory, \
 DeleteRoomsCategory, AddFacilities, ShowFacilities, DeleteFacilities, UpdateFacilities, ShowSpecificRoomsCategory, ShowSpecificRoom, \
-ShowSpecificPackage, Contact
+ShowSpecificPackage, Contact, Loyalty, ShowBookings, CalculatePrice
 
 urlpatterns = [
     path('register/', UserRegister.as_view(), name = "register"),
@@ -41,5 +41,9 @@ urlpatterns = [
 
     path('addcontact/',Contact.as_view(),name="add_contact"),
 
-    path('bookrooms/',BookRooms.as_view(),name="book_rooms")
+    path('bookrooms/',BookRooms.as_view(),name="book_rooms"),
+    path('calculatetotals/',CalculatePrice.as_view(),name="calculate_price"),
+    path('showbookings/',ShowBookings.as_view(),name="show_bookings"),
+
+    path('loyalty/',Loyalty.as_view(),name="loyalty")
 ]

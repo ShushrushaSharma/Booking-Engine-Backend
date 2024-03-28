@@ -23,7 +23,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserRegistration
-        fields = ['username', 'email' , 'first_name', 'last_name','profile_picture']
+        fields = ['username', 'email' , 'first_name', 'last_name','profile_picture','total_bookings_rewards']
+        read_only_fields = ['total_bookings_rewards']
     
 
 # Verify Account
@@ -55,7 +56,8 @@ class RoomCategorySerializer(serializers.ModelSerializer):
 class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
-        fields = ['number', 'price', 'name', 'type', 'image', 'facility', 'sleeps']
+        fields = ['number', 'price', 'name', 'type', 'image', 'facility', 'sleeps','credits_received', 'credits_required']
+        read_only_fields = ['credits_received', 'credits_required']
 
 
 # Reset Password
@@ -87,4 +89,6 @@ class BookingSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Booking
-        fields = ['name','check_in','check_out', 'adult', 'children']
+        fields = ['name','check_in','check_out', 'adult', 'children', 'occupancy', 'total_price', 'grand_total', 'booking_rewards', 'booking_credits','stay_duration']
+        read_only_fields = ['occupancy', 'total_price', 'grand_total', 'booking_rewards', 'booking_credits','stay_duration']
+

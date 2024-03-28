@@ -13,8 +13,8 @@ class UserRegistration(AbstractUser):
     password = models.CharField(max_length=100)
     is_verified = models.BooleanField(default=False)
     otp = models.CharField(max_length=4, null=True)
-    role = models.CharField(max_length=15, default='user')
     profile_picture = models.ImageField(upload_to="profile_images/", blank=True, null=True, default="profile_images/defaultimage.png")
+    total_bookings_rewards = models.IntegerField()
 
     def __str__(self):
         return self.username
@@ -80,10 +80,13 @@ class Package(models.Model):
 class Booking(models.Model):
      username = models.ForeignKey(UserRegistration,on_delete=models.CASCADE)
      name = models.ForeignKey(Room,on_delete=models.CASCADE, null=True)
+
      check_in = models.DateField()
      check_out = models.DateField()
      adult = models.IntegerField()
      children = models.IntegerField()
+
+     stay_duration = models.IntegerField()
      occupancy = models.IntegerField()
      total_price = models.IntegerField()
      grand_total = models.IntegerField()
