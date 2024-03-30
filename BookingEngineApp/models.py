@@ -61,7 +61,7 @@ class Room(models.Model):
         return str(self.name)
    
 
-# Upload Package Backend
+# Upload Package Backend    
 
 class Package(models.Model):
      type = models.CharField(max_length=100)
@@ -83,8 +83,8 @@ class Booking(models.Model):
 
      check_in = models.DateField()
      check_out = models.DateField()
-     adult = models.IntegerField()
-     children = models.IntegerField()
+     adult = models.IntegerField(default = 1)
+     children = models.IntegerField(default = 0)
 
      stay_duration = models.IntegerField()
      occupancy = models.IntegerField()

@@ -1,8 +1,9 @@
 from django.urls import path
 from .views import UserRegister, UserLogin, AddRooms, ShowRooms, UpdateRooms, DeleteRooms, ViewUserDetails, ViewPersonalDetails, UpdatePersonalDetails, \
-ResetPassword, AddPackage, ShowPackage, UpdatePackage, DeletePackage, VerifyOTP, BookRooms, AddRoomsCategory, UpdateRoomsCategory, ShowRoomsCategory, \
+ResetPassword, AddPackage, ShowPackage, UpdatePackage, DeletePackage, VerifyOTP, AddRoomsCategory, UpdateRoomsCategory, ShowRoomsCategory, \
 DeleteRoomsCategory, AddFacilities, ShowFacilities, DeleteFacilities, UpdateFacilities, ShowSpecificRoomsCategory, ShowSpecificRoom, \
-ShowSpecificPackage, Contact, Loyalty, ShowBookings, CalculatePrice
+ShowSpecificPackage, Contact, ShowBookings, CalculatePrice, LoyaltyBookings
+from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     path('register/', UserRegister.as_view(), name = "register"),
@@ -41,9 +42,9 @@ urlpatterns = [
 
     path('addcontact/',Contact.as_view(),name="add_contact"),
 
-    path('bookrooms/',BookRooms.as_view(),name="book_rooms"),
+    path('loyaltybookings/',LoyaltyBookings.as_view(),name="loyalty_bookings"),
     path('calculatetotals/',CalculatePrice.as_view(),name="calculate_price"),
     path('showbookings/',ShowBookings.as_view(),name="show_bookings"),
 
-    path('loyalty/',Loyalty.as_view(),name="loyalty")
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh')
 ]

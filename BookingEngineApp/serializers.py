@@ -10,7 +10,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserRegistration
         # declearing fields to serialize 
-        fields = ['username', 'email' , 'first_name', 'last_name', 'password','profile_picture']
+        fields = ['username', 'email' , 'first_name', 'last_name', 'password','profile_picture', 'total_bookings_rewards']
+        read_only_fields = ['total_bookings_rewards']
 
     # encrypting the password
     def save(self, **kwargs):
@@ -92,3 +93,13 @@ class BookingSerializer(serializers.ModelSerializer):
         fields = ['name','check_in','check_out', 'adult', 'children', 'occupancy', 'total_price', 'grand_total', 'booking_rewards', 'booking_credits','stay_duration']
         read_only_fields = ['occupancy', 'total_price', 'grand_total', 'booking_rewards', 'booking_credits','stay_duration']
 
+    def validate(self, data):
+        name = data.get('name')
+        occupancy = data.get('occupancy')
+        
+        if name and occupancy is not None:
+            room = Room.objects.get(name=name)
+            if occupancy > room.sleep:
+                raise serializers.ValidationError("Occupancy cannot be more than room limit")
+        
+        return data

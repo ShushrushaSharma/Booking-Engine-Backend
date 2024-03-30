@@ -13,7 +13,7 @@ from BookingEngineApp.emails import send_otp_via_email
 from rest_framework import status
 from datetime import datetime
 from django.db import transaction
-
+from rest_framework.parsers import MultiPartParser
 
 # User Register
 
@@ -359,10 +359,16 @@ class Contact(APIView):
 
 # Book Rooms
 
-class BookRooms(APIView):
+class LoyaltyBookings(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    parser_classes = [MultiPartParser]
 
     def post(self, request):
+
         serializer = BookingSerializer(data=request.data)
+
         if serializer.is_valid():
             room_name = serializer.data['name']
             check_in = serializer.data['check_in']
@@ -370,28 +376,31 @@ class BookRooms(APIView):
             adult = serializer.data['adult']
             children = serializer.data['children']
 
+            # checking if booking already exists
+
+            if Booking.objects.filter(name=room_name, check_in=check_in, check_out=check_out).exists():
+                return Response({'message': 'Booking already exists.'}, status=400)
+
             # checking if checkout date is before checkin date
 
             if check_out < check_in:
-                return Response({'message': 'Checkout date must be after check-in date.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'Checkout date must be after check-in date.'}, status=400)
 
             try:
                 room = Room.objects.get(number=room_name)
             except Room.DoesNotExist:
-                return Response({'message': 'Specified room cannot be found or is already booked.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'Room cannot be found.'}, status=400)
 
             if not self.is_room_available(room, check_in, check_out):
-                return Response({'message': 'Specified room is not available for the given dates.'}, status=status.HTTP_400_BAD_REQUEST)
-            
+                return Response({'message': 'Specified room is not available for the given dates.'}, status=400)
+
             # calculating price with the duration of stay
 
             check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
             check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
-            duration_of_stay = (check_out_date - check_in_date).days
-
+            duration_of_stay = max((check_out_date - check_in_date).days, 1)
             total_price = room.price * duration_of_stay
-
-            grand_total = total_price + (13/100 * total_price)
+            grand_total = total_price + (13 / 100 * total_price)
 
             # calculating occupancy
 
@@ -400,16 +409,24 @@ class BookRooms(APIView):
             # verifying occupancy and no of sleeps in the room
 
             if room.sleeps < occupancy:
-                return Response({'message': 'Occupancy is more than a limit.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'Occupancy is more than a limit.'}, status=400)
 
             # booking rewards and booking credits for a room
 
             booking_rewards = room.credits_received
             booking_credits = room.credits_required
 
-            # updating user's total booking rewards
-            
-            user_registration = UserRegistration.objects.get(username=request.user.username)
+            # updating user's total booking rewards with loyalty
+
+            user_registration = UserRegistration.objects.get(username=request.user)
+            if user_registration.total_bookings_rewards >= booking_credits:
+                with transaction.atomic():
+                    user_registration.total_bookings_rewards -= booking_credits
+                    booking_credits = 0
+                    user_registration.save()
+            else:
+                return Response({'message': 'Insufficient booking rewards to make loyalty payment.'}, status=400)
+
             user_registration.total_bookings_rewards += booking_rewards
             user_registration.save()
 
@@ -418,12 +435,10 @@ class BookRooms(APIView):
             booking = Booking.objects.create(
                 username=self.request.user,
                 name=room,
-
                 check_in=check_in,
                 check_out=check_out,
                 adult=adult,
                 children=children,
-
                 stay_duration=duration_of_stay,
                 occupancy=occupancy,
                 total_price=total_price,
@@ -431,14 +446,14 @@ class BookRooms(APIView):
                 booking_rewards=booking_rewards,
                 booking_credits=booking_credits
             )
-
             booking.save()
             room.save()
 
-            return Response({'message': f'Room {room} booked successfully.'}, status=status.HTTP_201_CREATED)
+            return Response({'message': f'Room {room} booked successfully.'}, status=201)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # checking the available rooms with the sepecific dates
+    # checking the available rooms with the specific dates
 
     def is_room_available(self, room, check_in, check_out):
         check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
@@ -449,7 +464,7 @@ class BookRooms(APIView):
             if booking.check_in < check_out_date and booking.check_out > check_in_date:
                 return False
         return True
-
+    
 
 # calculating data for all the bookings
     
@@ -466,20 +481,20 @@ class CalculatePrice(APIView):
 
             # checking if checkout date is before checkin date
             if check_out < check_in:
-                return Response({'message': 'Checkout date must be after check-in date.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'Checkout date must be after check-in date!'}, status=400)
 
             try:
                 room = Room.objects.get(number=room_name)
             except Room.DoesNotExist:
-                return Response({'message': 'Specified room cannot be found or is already booked.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'Room cannot be found.'}, status=400)
             
             if not self.is_room_available(room, check_in, check_out):
-                return Response({'message': 'Specified room is not available for the given dates.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'Specified room is not available for the given dates!'}, status=404)
 
             # calculating price with the duration of stay
             check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
             check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
-            duration_of_stay = (check_out_date - check_in_date).days
+            duration_of_stay = max((check_out_date - check_in_date).days, 1)
 
             total_price = room.price * duration_of_stay
             grand_total = total_price + (13/100 * total_price)
@@ -489,7 +504,7 @@ class CalculatePrice(APIView):
 
             # verifying occupancy and no of sleeps in the room
             if room.sleeps < occupancy:
-                return Response({'message': 'Occupancy is more than a limit.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'Occupancy is more than a limit!'}, status=400)
 
             return Response({
                 'stay_duration': duration_of_stay,
@@ -498,7 +513,7 @@ class CalculatePrice(APIView):
                 'occupancy': occupancy
             }, status=status.HTTP_200_OK)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=400)
     
     # checking the available rooms with the sepecific dates
 
@@ -519,39 +534,3 @@ class ShowBookings(APIView):
         booking = Booking.objects.all()
         serializer = BookingSerializer(booking, many=True)
         return Response(serializer.data,status=200)
-
-
-# Loyalty Schemes
-
-class Loyalty(APIView):
-    
-    def post(self,request):
-
-        # accessing booking id for loyalty payments
-
-        booking_id = request.data.get('booking_id')
-
-        try:
-            booking = Booking.objects.get(id=booking_id)
-        except Booking.DoesNotExist:
-            return Response({'message': 'Booking does not exist.'}, status=400)
-        
-        booking_credits = booking.booking_credits
-
-        # accessing details of user (user_registration = request.user)
-
-        user_registration = UserRegistration.objects.get(username=request.user.username)
-
-        if user_registration.total_bookings_rewards >= booking_credits:
-            with transaction.atomic():
-                user_registration.total_bookings_rewards -= booking_credits
-                user_registration.save()
-                booking.booking_credits = 0 
-                booking.save()
-        else:
-            return Response({'message': 'Insufficient booking rewards to make loyalty payment.'}, status=400)
-        
-        if booking.booking_credits == 0:
-            return Response({'message': "Booking Credits Already Used."}, status=200)
-
-        return Response({'message': 'Loyalty payment successful.'}, status=200)
