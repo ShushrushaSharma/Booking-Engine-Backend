@@ -3,7 +3,8 @@ from django.contrib.auth import authenticate
 from rest_framework.decorators import APIView
 from BookingEngineApp.models import UserRegistration
 from BookingEngineApp.serializers import UserRegisterSerializer, UserLoginSerializer, RoomSerializer, ResetPasswordSerializer, PackageSerializer, \
-     VerifyAccountSerializer, BookingSerializer, ProfileSerializer, RoomCategorySerializer, FacilitySerializer, ContactSerializer
+     VerifyAccountSerializer, BookingSerializer, ProfileSerializer, RoomCategorySerializer, FacilitySerializer, ContactSerializer, KhaltiSerializer, \
+     KhaltiSerializerAfterInitiate
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from BookingEngineApp.models import Room, RoomCategory, Facility, UserRegistration, Package, Booking
@@ -14,6 +15,10 @@ from rest_framework import status
 from datetime import datetime
 from django.db import transaction
 from rest_framework.parsers import MultiPartParser
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
+from rest_framework import exceptions, serializers, status
+from django.conf import settings
+from django.http import HttpResponseRedirect
 
 # User Register
 
@@ -534,3 +539,56 @@ class ShowBookings(APIView):
         booking = Booking.objects.all()
         serializer = BookingSerializer(booking, many=True)
         return Response(serializer.data,status=200)
+
+
+# Khalti Payments
+    
+class KhaltiApiView(APIView):
+
+    parser_classes= [MultiPartParser]
+
+    @extend_schema(
+        operation_id="API to make a post request in Khalti",
+        description="""
+        This API is for making a POST request to Khalti,
+        where it takes return_url, website_url, amount, purchase_order_id,appointment_id's
+        purchase_order_name as compulsory request data.
+        There are other optional request data like customer_info,
+        amount_breakdown, product_details.
+        """,
+        request=KhaltiSerializer,
+        responses={
+            status.HTTP_200_OK: inline_serializer(
+                name="Khalti",
+                fields={
+                    "pidx": serializers.CharField(),
+                    "payment_url": serializers.CharField(),
+                    "expires_at": serializers.DateTimeField(),
+                    "expires_in": serializers.IntegerField(),
+                },
+            )
+        },
+    )
+
+    def post(self, request, *args, **kwargs):
+        serializer = KhaltiSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        data = serializer.save()
+        return Response({"message": "Khalti data retrieved successfully", "data": data}, status=status.HTTP_200_OK)
+
+
+    @extend_schema(
+        operation_id="API to make a get request by khalti",
+        description="""
+        This api is for khalti to give get request after the payment is successfull ..
+        """,
+    )
+    def get(self, request, *args, **kwargs):
+        serializer = KhaltiSerializerAfterInitiate(data=request.query_params, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        success = serializer.save()
+
+        if success:
+            success_url = settings.PAYMENT_SUCCESS_URL
+            return HttpResponseRedirect(redirect_to=f"{success_url}?payment_id={id}")
+        return HttpResponseRedirect(redirect_to=f"{settings.PAYMENT_FAILED_URL}?payment_id={id}")

@@ -2,7 +2,7 @@ from django.urls import path
 from .views import UserRegister, UserLogin, AddRooms, ShowRooms, UpdateRooms, DeleteRooms, ViewUserDetails, ViewPersonalDetails, UpdatePersonalDetails, \
 ResetPassword, AddPackage, ShowPackage, UpdatePackage, DeletePackage, VerifyOTP, AddRoomsCategory, UpdateRoomsCategory, ShowRoomsCategory, \
 DeleteRoomsCategory, AddFacilities, ShowFacilities, DeleteFacilities, UpdateFacilities, ShowSpecificRoomsCategory, ShowSpecificRoom, \
-ShowSpecificPackage, Contact, ShowBookings, CalculatePrice, LoyaltyBookings
+ShowSpecificPackage, Contact, ShowBookings, CalculatePrice, LoyaltyBookings, KhaltiApiView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
@@ -46,5 +46,7 @@ urlpatterns = [
     path('calculatetotals/',CalculatePrice.as_view(),name="calculate_price"),
     path('showbookings/',ShowBookings.as_view(),name="show_bookings"),
 
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh')
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    path("khalti-initiate/", KhaltiApiView.as_view(), name="khalti-initiate"),
 ]

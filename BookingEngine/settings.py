@@ -172,3 +172,11 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=10), 
     "REFRESH_TOKEN_LIFETIME": timedelta(days=30) 
 }
+
+# khalti keys
+
+KHATI_SECRET_KEY = "3427e961a1de416bb6a10482a98b3877"
+KHALTI_INITIATE_URL = "https://a.khalti.com/api/v2/epayment/initiate/"
+KHALTI_LOOK_URL = "https://a.khalti.com/api/v2/epayment/lookup/"
+PAYMENT_SUCCESS_URL = "http://127.0.0.1:8000/"
+PAYMENT_FAILED_URL = "http://127.0.0.1:8000/"
