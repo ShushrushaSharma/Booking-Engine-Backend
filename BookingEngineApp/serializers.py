@@ -1,12 +1,15 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
-from BookingEngineApp.models import UserRegistration, Facility, Room, RoomCategory, Package, Booking, Contact
+from BookingEngineApp.models import UserRegistration, Facility, Room, RoomCategory, Package, Booking, Contact, PaymentHistory
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 
 from django.conf import settings
 import json
 import requests
 from rest_framework import exceptions
+import uuid
 
 
 # User Register 
@@ -15,8 +18,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserRegistration
         # declearing fields to serialize 
-        fields = ['username', 'email' , 'first_name', 'last_name', 'password','profile_picture', 'total_bookings_rewards']
-        read_only_fields = ['total_bookings_rewards']
+        fields = ['id','username', 'email' , 'first_name', 'last_name', 'password','profile_picture', 'total_bookings_rewards']
+        read_only_fields = ['total_bookings_rewards', 'id']
 
     # encrypting the password
     def save(self, **kwargs):
@@ -54,16 +57,23 @@ class FacilitySerializer(serializers.ModelSerializer):
         model = Facility
         fields = "__all__"
 
+    
 class RoomCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomCategory
         fields = "__all__"
+
 
 class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = ['number', 'price', 'name', 'type', 'image', 'facility', 'sleeps','credits_received', 'credits_required']
         read_only_fields = ['credits_received', 'credits_required']
+
+    # def validate_number(self, value):
+    #     if Room.objects.filter(number=value).exists():
+    #         raise serializers.ValidationError("Room with this number already exists.")
+    #     return value
 
 
 # Reset Password
@@ -78,7 +88,8 @@ class ResetPasswordSerializer(serializers.Serializer):
 class PackageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Package
-        fields = "__all__"
+        fields = ['id','type','overview','days','room','price']
+        read_only_fields = ['price','id']
 
 
 # Contact
@@ -88,6 +99,12 @@ class ContactSerializer(serializers.ModelSerializer):
         model = Contact
         fields = "__all__"
 
+    def validate_email(self, value):
+        try:
+            validate_email(value)
+        except ValidationError:
+            raise serializers.ValidationError("Invalid email format")
+        return value
 
 # Book Rooms
 
@@ -95,9 +112,9 @@ class BookingSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Booking
-        fields = ['name','check_in','check_out', 'adult', 'children', 'occupancy', 'total_price', 'grand_total', 'booking_rewards', 'booking_credits','stay_duration']
-        read_only_fields = ['occupancy', 'total_price', 'grand_total', 'booking_rewards', 'booking_credits','stay_duration']
-
+        fields = ['id','name','type','check_in','check_out', 'adult', 'children', 'occupancy', 'total_price', 'grand_total', 'booking_rewards', 'booking_credits','stay_duration']
+        read_only_fields = ['occupancy', 'total_price', 'grand_total', 'booking_rewards', 'booking_credits','stay_duration','id']
+    
     def validate(self, data):
         name = data.get('name')
         occupancy = data.get('occupancy')
@@ -110,10 +127,19 @@ class BookingSerializer(serializers.ModelSerializer):
         return data
     
 
+# Payment History
+
+class PaymentHistorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PaymentHistory
+        fields = '__all__'
+
+
 # Khalti Payments
 
 class KhaltiSerializer(serializers.Serializer):
-    purchase_order_id = serializers.CharField(max_length=100)
+    
     amount = serializers.DecimalField(max_digits=9, decimal_places=2)
     purchase_order_name = serializers.CharField()
 
@@ -127,7 +153,9 @@ class KhaltiSerializer(serializers.Serializer):
             "Content-Type": "application/json",
         }
 
-        purchase_order_id = validated_data.get("purchase_order_id")
+        # Generate unique purchase_order_id using UUID
+        purchase_order_id = str(uuid.uuid4())
+
         amount = validated_data.get("amount")
 
         payload = {
@@ -151,12 +179,23 @@ class KhaltiSerializer(serializers.Serializer):
             # including pidx in the returned data
 
             payment_id = data.get("pidx")
+
+            # saving payment history
+
+            PaymentHistory.objects.create (
+                amount=amount,
+                purchase_order_name=validated_data.get("purchase_order_name"),
+                payment_id=payment_id,
+                status="Initiated"  
+            )
+
             data["pidx"] = payment_id
 
             return data
         
         except (requests.RequestException, ValueError) as e:
             raise exceptions.APIException("Failed to initiate payment. Please try again later.")
+        
 
 
 class KhaltiSerializerAfterInitiate(serializers.Serializer):
@@ -181,11 +220,24 @@ class KhaltiSerializerAfterInitiate(serializers.Serializer):
             
             if status and status.lower() == "completed":
                 success_message = "Thank you for your payment! Your transaction was successful."
-                return {"success": True, "message": success_message, "payment_id": response_data_json.get("pidx")}
+
+                # updating payment history
+
+                payment_history = PaymentHistory.objects.get(payment_id=token)
+                payment_history.status = "Completed"
+                payment_history.save()
+                return {"success": True, "message": success_message, "payment_id": token}
+                
             else:
                 error_message = "Payment failed. Please try again or contact support."
-                return {"success": False, "message": error_message, "payment_id": response_data_json.get("pidx")}
+
+                 # updating payment history
+
+                payment_history = PaymentHistory.objects.get(payment_id=token)
+                payment_history.status = "Failed"
+                payment_history.save()
+                return {"success": False, "message": error_message, "payment_id": token}
             
         except (requests.RequestException, ValueError) as e:
             raise exceptions.APIException("Failed to verify payment. Please try again later.")
-   
+  

@@ -1,8 +1,9 @@
 from django.urls import path
 from .views import UserRegister, UserLogin, AddRooms, ShowRooms, UpdateRooms, DeleteRooms, ViewUserDetails, ViewPersonalDetails, UpdatePersonalDetails, \
-ResetPassword, AddPackage, ShowPackage, UpdatePackage, DeletePackage, VerifyOTP, AddRoomsCategory, UpdateRoomsCategory, ShowRoomsCategory, \
-DeleteRoomsCategory, AddFacilities, ShowFacilities, DeleteFacilities, UpdateFacilities, ShowSpecificRoomsCategory, ShowSpecificRoom, \
-ShowSpecificPackage, Contact, ShowBookings, CalculatePrice, LoyaltyBookings, KhaltiApiView
+ResetPassword, AddPackage, ShowPackage, UpdatePackage, DeletePackage, VerifyOTP, AddRoomsCategory, UpdateRoomsCategory, ShowRoomsCategory, DeleteUserDetails, \
+DeleteRoomsCategory, AddFacilities, ShowFacilities, DeleteFacilities, UpdateFacilities, ShowSpecificRoomsCategory, ShowSpecificRoom, RoomCategoryDetails, \
+ShowSpecificPackage, AddContact, ShowBookings, CalculatePrice, LoyaltyBookings, KhaltiApiView, PackagesApiView, CountDetailsView, TopBookingsView, ShowContact,\
+DeleteContact, DeleteBookings, ShowPaymentHistory
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
@@ -28,6 +29,7 @@ urlpatterns = [
     path('deletefacilities/<int:pk>/',DeleteFacilities.as_view(),name="delete_facilities"),
 
     path('viewuserdetails/',ViewUserDetails.as_view(),name="view_user_details"),
+    path('deleteuserdetails/<int:id>/',DeleteUserDetails.as_view(),name="delete_user_details"),
 
     path('viewpersonaldetails/<int:id>/',ViewPersonalDetails.as_view(),name="view_personal_details"),
     path('updatepersonaldetails/<int:id>/',UpdatePersonalDetails.as_view(),name="update_personal_details"),
@@ -40,13 +42,23 @@ urlpatterns = [
     path('deletepackage/<int:id>/',DeletePackage.as_view(),name="delete_package"),
     path('showspecificpackage/<int:id>/',ShowSpecificPackage.as_view(),name="showspecific_package"),
 
-    path('addcontact/',Contact.as_view(),name="add_contact"),
+    path('addcontact/',AddContact.as_view(),name="add_contact"),
+    path('showcontact/',ShowContact.as_view(),name="show_contact"),
+    path('deletecontact/<int:id>/',DeleteContact.as_view(),name="delete_contact"),
 
     path('loyaltybookings/',LoyaltyBookings.as_view(),name="loyalty_bookings"),
     path('calculatetotals/',CalculatePrice.as_view(),name="calculate_price"),
     path('showbookings/',ShowBookings.as_view(),name="show_bookings"),
+    path('deletebookings/<int:id>/',DeleteBookings.as_view(),name="delete_bookings"),
 
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     path("khalti-initiate/", KhaltiApiView.as_view(), name="khalti-initiate"),
+    path("package-initiate/", PackagesApiView.as_view(), name="package-initiate"),
+    path("paymenthistory/", ShowPaymentHistory.as_view(), name="payment-history"),
+
+    path("count-details/", CountDetailsView.as_view(), name="count-details"),
+    path("booking-details/", TopBookingsView.as_view(), name="booking-details"),
+    path("category-details/", RoomCategoryDetails.as_view(), name="category-details"),  
 ]
+
