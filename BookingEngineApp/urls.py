@@ -3,7 +3,7 @@ from .views import UserRegister, UserLogin, AddRooms, ShowRooms, UpdateRooms, De
 ResetPassword, AddPackage, ShowPackage, UpdatePackage, DeletePackage, VerifyOTP, AddRoomsCategory, UpdateRoomsCategory, ShowRoomsCategory, DeleteUserDetails, \
 DeleteRoomsCategory, AddFacilities, ShowFacilities, DeleteFacilities, UpdateFacilities, ShowSpecificRoomsCategory, ShowSpecificRoom, RoomCategoryDetails, \
 ShowSpecificPackage, AddContact, ShowBookings, CalculatePrice, LoyaltyBookings, KhaltiApiView, PackagesApiView, CountDetailsView, TopBookingsView, ShowContact,\
-DeleteContact, DeleteBookings, ShowPaymentHistory
+DeleteContact, DeleteBookings, ShowPaymentHistory, GetNotificationsView, CountUnseenNotificationsView, SeeNotificationsView, SendQueryReply, ShowAllBookings
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
@@ -45,10 +45,13 @@ urlpatterns = [
     path('addcontact/',AddContact.as_view(),name="add_contact"),
     path('showcontact/',ShowContact.as_view(),name="show_contact"),
     path('deletecontact/<int:id>/',DeleteContact.as_view(),name="delete_contact"),
+    path('sendqueryreply/',SendQueryReply.as_view(),name="query_reply"),
+
 
     path('loyaltybookings/',LoyaltyBookings.as_view(),name="loyalty_bookings"),
     path('calculatetotals/',CalculatePrice.as_view(),name="calculate_price"),
     path('showbookings/',ShowBookings.as_view(),name="show_bookings"),
+    path('showallbookings/',ShowAllBookings.as_view(),name="showall_bookings"),
     path('deletebookings/<int:id>/',DeleteBookings.as_view(),name="delete_bookings"),
 
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
@@ -60,5 +63,9 @@ urlpatterns = [
     path("count-details/", CountDetailsView.as_view(), name="count-details"),
     path("booking-details/", TopBookingsView.as_view(), name="booking-details"),
     path("category-details/", RoomCategoryDetails.as_view(), name="category-details"),  
-]
 
+    path("notifications/", GetNotificationsView.as_view(), name="notifications"),
+    path("unseennotifications/", CountUnseenNotificationsView.as_view(), name="notifications"),
+    path("seenotifications/", SeeNotificationsView.as_view(), name="notifications"),
+
+]

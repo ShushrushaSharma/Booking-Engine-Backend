@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
-from BookingEngineApp.models import UserRegistration, Facility, Room, RoomCategory, Package, Booking, Contact, PaymentHistory
+from BookingEngineApp.models import UserRegistration, Facility, Room, RoomCategory, Package, Booking, Contact, PaymentHistory, Notification
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 
@@ -10,6 +10,7 @@ import json
 import requests
 from rest_framework import exceptions
 import uuid
+from django.utils import timezone
 
 
 # User Register 
@@ -70,11 +71,6 @@ class RoomSerializer(serializers.ModelSerializer):
         fields = ['number', 'price', 'name', 'type', 'image', 'facility', 'sleeps','credits_received', 'credits_required']
         read_only_fields = ['credits_received', 'credits_required']
 
-    # def validate_number(self, value):
-    #     if Room.objects.filter(number=value).exists():
-    #         raise serializers.ValidationError("Room with this number already exists.")
-    #     return value
-
 
 # Reset Password
 
@@ -105,6 +101,26 @@ class ContactSerializer(serializers.ModelSerializer):
         except ValidationError:
             raise serializers.ValidationError("Invalid email format")
         return value
+    
+
+# Notifications
+
+class NotificationSerializer(serializers.ModelSerializer):
+
+    # overriding the date field to format it as "dd-mm-yyyy hh-mm"
+
+    date = serializers.SerializerMethodField()
+
+    def get_date(self, obj):
+        
+        # formating the date field as "dd-mm-yyyy hh-mm"
+
+        return obj.date.strftime('%d %b %Y, %H:%M')
+
+    class Meta:
+        model = Notification
+        fields = ['message', 'date', 'seen']
+
 
 # Book Rooms
 
@@ -112,8 +128,8 @@ class BookingSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Booking
-        fields = ['id','name','type','check_in','check_out', 'adult', 'children', 'occupancy', 'total_price', 'grand_total', 'booking_rewards', 'booking_credits','stay_duration']
-        read_only_fields = ['occupancy', 'total_price', 'grand_total', 'booking_rewards', 'booking_credits','stay_duration','id']
+        fields = ['username','id','name','type','check_in','check_out', 'adult', 'children', 'occupancy', 'total_price', 'grand_total', 'booking_rewards', 'booking_credits','stay_duration']
+        read_only_fields = ['username','occupancy', 'total_price', 'grand_total', 'booking_rewards', 'booking_credits','stay_duration','id']
     
     def validate(self, data):
         name = data.get('name')
@@ -153,7 +169,8 @@ class KhaltiSerializer(serializers.Serializer):
             "Content-Type": "application/json",
         }
 
-        # Generate unique purchase_order_id using UUID
+        # generating unique purchase_order_id using UUID
+
         purchase_order_id = str(uuid.uuid4())
 
         amount = validated_data.get("amount")
@@ -181,12 +198,16 @@ class KhaltiSerializer(serializers.Serializer):
             payment_id = data.get("pidx")
 
             # saving payment history
+            
+            request = self.context.get('request')
 
             PaymentHistory.objects.create (
+                username=request.user,
                 amount=amount,
                 purchase_order_name=validated_data.get("purchase_order_name"),
                 payment_id=payment_id,
-                status="Initiated"  
+                status="Initiated",  
+                timestamp=timezone.now()
             )
 
             data["pidx"] = payment_id
@@ -240,4 +261,3 @@ class KhaltiSerializerAfterInitiate(serializers.Serializer):
             
         except (requests.RequestException, ValueError) as e:
             raise exceptions.APIException("Failed to verify payment. Please try again later.")
-  

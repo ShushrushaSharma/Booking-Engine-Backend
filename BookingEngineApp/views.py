@@ -5,17 +5,17 @@ from rest_framework.decorators import APIView
 from BookingEngineApp.models import UserRegistration
 from BookingEngineApp.serializers import UserRegisterSerializer, UserLoginSerializer, RoomSerializer, ResetPasswordSerializer, PackageSerializer, \
      VerifyAccountSerializer, BookingSerializer, ProfileSerializer, RoomCategorySerializer, FacilitySerializer, ContactSerializer, KhaltiSerializer, \
-     KhaltiSerializerAfterInitiate, PaymentHistorySerializer
+     KhaltiSerializerAfterInitiate, PaymentHistorySerializer, NotificationSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from BookingEngineApp.models import Room, RoomCategory, Facility, UserRegistration, Package, Booking, Contact, PaymentHistory
+from BookingEngineApp.models import Room, RoomCategory, Facility, UserRegistration, Package, Booking, Contact, PaymentHistory, Notification
 from django.shortcuts import get_object_or_404
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
-from BookingEngineApp.emails import send_otp_via_email
+from rest_framework.permissions import IsAuthenticated
+from BookingEngineApp.emails import send_otp_via_email, send_query_reply
 from rest_framework import status
 from datetime import datetime
 from django.db import transaction
-from rest_framework.parsers import MultiPartParser, JSONParser
+from rest_framework.parsers import MultiPartParser
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
 from django.conf import settings
@@ -25,6 +25,7 @@ import calendar
 from django.utils import timezone
 from django.db.models import Count
 from django.db.models.functions import ExtractMonth
+from rest_framework.pagination import PageNumberPagination
 
 
 # User Register
@@ -125,16 +126,34 @@ class AddRoomsCategory(APIView):
 
         if serializer.is_valid():
             serializer.save()
+
+             # creating notifications
+
+            users = UserRegistration.objects.all().exclude(email__endswith = '@admin.com')
+        
+            # creating notifications for each user
+            
+            for user in users:
+                Notification.objects.create(
+                    username=user,
+                    message=f"New Room Category named {type} was added."
+                )
+            
+            print("Notifications sent to all users")
+
             return Response({'message': 'Room Category added successfully.', 'data': serializer.data}, status=201)
         
         return Response(serializer.errors, status=400)
 
     
-class ShowRoomsCategory(APIView):
+class ShowRoomsCategory(APIView, PageNumberPagination):
+
+    page_size = 4
 
     def get(self,request):
         roomscategory = RoomCategory.objects.all()
-        serializer = RoomCategorySerializer(roomscategory, many = True)
+        results = self.paginate_queryset(roomscategory, request, view=self)
+        serializer = RoomCategorySerializer(results, many = True)
         return Response(serializer.data)
 
 
@@ -183,21 +202,38 @@ class AddRooms(APIView):
             sleeps = serializer.validated_data['sleeps']
 
             # calculating booking rewards and required points for loyalty
-            credits_received = price / 2
+            credits_received = price * 10/100
             credits_required = price * sleeps
 
             # saving data with calculated credit points
             serializer.save(credits_received=credits_received, credits_required=credits_required)
+
+            # creating notifications
+
+            users = UserRegistration.objects.all().exclude(email__endswith = '@admin.com')
+        
+            # creating notifications for each user
+            
+            for user in users:
+                Notification.objects.create(
+                    username=user,
+                    message=f"New Room named {name} was added."
+                )
+            
+            print("Notifications sent to all users")
             
             return Response({'message': 'Room added successfully.', 'data': serializer.data}, status=201)
         return Response(serializer.errors, status=400)
 
 
-class ShowRooms(APIView):
+class ShowRooms(APIView,PageNumberPagination):
+
+    page_size = 4
 
     def get(self,request):
         rooms = Room.objects.all()
-        serializer = RoomSerializer(rooms, many = True)
+        results = self.paginate_queryset(rooms, request, view=self)
+        serializer = RoomSerializer(results, many = True)
         return Response(serializer.data)
 
 
@@ -246,6 +282,21 @@ class AddFacilities(APIView):
                 return Response(serializer.errors, status=400)
             
             serializer.save()
+
+            # creating notifications
+
+            users = UserRegistration.objects.all().exclude(email__endswith = '@admin.com')
+        
+            # creating notifications for each user
+
+            for user in users:
+                Notification.objects.create(
+                    username=user,
+                    message=f"New Facility named {name} was added."
+                )
+            
+            print("Notifications sent to all users")
+
             return Response({'message': 'Facility added successfully.', 'data': serializer.data}, status=201)
         
         return Response(serializer.errors, status=400)
@@ -299,7 +350,6 @@ class DeleteUserDetails(APIView):
 # View Personal Details
 
 class ViewPersonalDetails(APIView):
-
 
     def get(self,request,id):
         userregistration = get_object_or_404(UserRegistration,id = id)
@@ -365,8 +415,22 @@ class AddPackage(APIView):
             total_price = room_price * days
 
             serializer.validated_data['price'] = total_price
-            
             serializer.save()
+
+            # creating notifications
+
+            users = UserRegistration.objects.all().exclude(email__endswith = '@admin.com')
+        
+            # creating notifications for each user
+            
+            for user in users:
+                Notification.objects.create(
+                    username=user,
+                    message=f"New Package named {type} was added."
+                )
+            
+            print("Notifications sent to all users")
+
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     
@@ -434,6 +498,75 @@ class DeleteContact(APIView):
         contact = get_object_or_404(Contact, id=id)
         contact.delete()
         return Response("Deleted Successfully") 
+    
+class SendQueryReply(APIView):
+    
+    def post(self, request):
+        data = request.data
+        email = data.get('email')
+        reply = data.get('reply')
+
+        if not email:
+            return Response({'error': 'Email address is required.'}, status=400)
+
+        if not reply:
+            return Response({'error': 'Reply content is required.'}, status=400)
+
+        try:
+            contact = Contact.objects.get(email=email)
+        except Contact.DoesNotExist:
+            return Response({'error': 'No contact found with the provided email address.'}, status=404)
+
+        success, message = send_query_reply(email=email, reply=reply)
+
+        if success:
+            contact.reply = reply
+            contact.save()
+            return Response({'message': message}, status=200)
+        else:
+            return Response({'error': message}, status=500)
+    
+
+# Notifications
+
+class GetNotificationsView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        # fetching notifications associated with the current user
+
+        notifications = Notification.objects.filter(username=request.user).order_by('-date')
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data, status=200)
+
+
+class CountUnseenNotificationsView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        # counting unseen notifications for the current user
+
+        count = Notification.objects.filter(username=request.user, seen=False).count()
+        return Response({'count': count}, status=200)
+
+
+class SeeNotificationsView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        # marking unseen notifications as seen for the current user
+
+        notifications = Notification.objects.filter(username=request.user, seen=False)
+        for notification in notifications:
+            notification.seen = True
+            notification.save()
+        return Response("Notifications Seen.", status=200)
 
 
 # Book Rooms
@@ -529,7 +662,7 @@ class LoyaltyBookings(APIView):
             room.save()
 
             return Response({'message': f'Room {room} booked successfully.'}, status=201)
-
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # checking the available rooms with the specific dates
@@ -558,6 +691,9 @@ class CalculatePrice(APIView):
             adult = serializer.data['adult']
             children = serializer.data['children']
 
+            if Booking.objects.filter(name=room_name, check_in=check_in, check_out=check_out).exists():
+                    return Response({'message': 'Booking exists in same dates!'}, status=404)
+
             # checking if checkout date is before checkin date
             if check_out < check_in:
                 return Response({'message': 'Checkout date must be after check-in date!'}, status=400)
@@ -565,7 +701,7 @@ class CalculatePrice(APIView):
             try:
                 room = Room.objects.get(number=room_name)
             except Room.DoesNotExist:
-                return Response({'message': 'Room cannot be found.'}, status=400)
+                return Response({'error': 'Room cannot be found.'}, status=400)
             
             if not self.is_room_available(room, check_in, check_out):
                 return Response({'message': 'Specified room is not available for the given dates!'}, status=404)
@@ -594,7 +730,7 @@ class CalculatePrice(APIView):
         
         return Response(serializer.errors, status=400)
     
-    # checking the available rooms with the sepecific dates
+    # checking the available rooms with the specific dates
 
     def is_room_available(self, room, check_in, check_out):
         check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
@@ -609,13 +745,19 @@ class CalculatePrice(APIView):
 
 class ShowBookings(APIView):
 
-    #permission_classes  = [IsAuthenticated]
+    def get(self,request):
+        booking = Booking.objects.filter(username = request.user)
+        serializer = BookingSerializer(booking, many=True)
+        return Response(serializer.data,status=200)
+    
+
+class ShowAllBookings(APIView):
 
     def get(self,request):
         booking = Booking.objects.all()
         serializer = BookingSerializer(booking, many=True)
         return Response(serializer.data,status=200)
-    
+
 
 class DeleteBookings(APIView):
 
@@ -730,6 +872,7 @@ class KhaltiApiView(APIView):
                 )
                 booking.save()
                 room.save() 
+                    
             else:
                 return Response(booking_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -834,7 +977,7 @@ class PackagesApiView(APIView):
 
                 # calculating price with the duration of stay
                 
-                total_price = package.price * package.days
+                total_price = package.price 
                 grand_total = total_price + (13 / 100 * total_price)
                 
 
@@ -849,6 +992,7 @@ class PackagesApiView(APIView):
                     grand_total=grand_total,
                 )
                 booking.save()
+
             else:
                 return Response(booking_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -887,10 +1031,8 @@ class PackagesApiView(APIView):
 
 class ShowPaymentHistory(APIView):
 
-    # permission_classes  = [IsAuthenticated]
-
     def get(self,request):
-        payment = PaymentHistory.objects.all()
+        payment = PaymentHistory.objects.filter(username = request.user)
         serializer = PaymentHistorySerializer(payment, many=True)
         return Response(serializer.data,status=200)
 
@@ -947,3 +1089,4 @@ class RoomCategoryDetails(APIView):
             })
 
         return Response(category_data)
+    

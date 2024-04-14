@@ -96,12 +96,13 @@ class Booking(models.Model):
      
 
      def __str__(self):
-        return str(self.username)
+        return f"{self.check_in} - {self.check_out} - {self.name}"
      
 
 # Payment History
 
 class PaymentHistory(models.Model):
+    username = models.ForeignKey(UserRegistration,on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=9, decimal_places=2)
     purchase_order_name = models.CharField(max_length=255)
     payment_id = models.CharField(max_length=100)
@@ -123,6 +124,20 @@ class Contact(models.Model):
     email = models.EmailField(validators=[EmailValidator])
     subject = models.CharField(max_length=200)
     message = models.TextField()
+    reply = models.TextField(null=True)
 
     def __str__(self):
         return str(self.name)
+    
+
+# Notification Models
+
+class Notification(models.Model):
+    username = models.ForeignKey(UserRegistration,on_delete=models.CASCADE)
+    id = models.AutoField(primary_key=True)
+    message = models.TextField()
+    date = models.DateTimeField(auto_now_add=True)
+    seen = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.date} - {self.message}"

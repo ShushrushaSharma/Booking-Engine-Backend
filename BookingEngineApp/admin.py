@@ -1,5 +1,5 @@
 from django.contrib import admin
-from BookingEngineApp.models import UserRegistration, Room, Facility, Package, Booking, RoomCategory, Contact, PaymentHistory
+from BookingEngineApp.models import UserRegistration, Room, Facility, Package, Booking, RoomCategory, Contact, PaymentHistory, Notification
 
 # Register your models here.
 
@@ -11,3 +11,4 @@ admin.site.register(Package)
 admin.site.register(Booking)
 admin.site.register(Contact)
 admin.site.register(PaymentHistory)
+admin.site.register(Notification)
