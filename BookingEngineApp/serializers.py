@@ -4,6 +4,7 @@ from django.contrib.auth.hashers import make_password
 from BookingEngineApp.models import UserRegistration, Facility, Room, RoomCategory, Package, Booking, Contact, PaymentHistory, Notification
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+from BookingEngineApp.emails import send_password_reset_email
 
 from django.conf import settings
 import json
@@ -12,6 +13,9 @@ from rest_framework import exceptions
 import uuid
 from django.utils import timezone
 
+from django.utils.encoding import smart_str, force_bytes, DjangoUnicodeDecodeError
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
 # User Register 
 
@@ -261,3 +265,51 @@ class KhaltiSerializerAfterInitiate(serializers.Serializer):
             
         except (requests.RequestException, ValueError) as e:
             raise exceptions.APIException("Failed to verify payment. Please try again later.")
+        
+
+# Reset Password Serializer
+
+class SendPasswordResetEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length = 255)
+    class Meta:
+        fields = ["email"]
+
+    def validate(self, obj):
+        email = obj.get('email')
+        if UserRegistration.objects.filter(email = email).exists():
+            user = UserRegistration.objects.get(email = email)
+            uid = urlsafe_base64_encode(force_bytes(user.id))
+            token = PasswordResetTokenGenerator().make_token(user)
+            print('Password Reset Token', token)
+            link = "http://localhost:3000/resetpassword/" + uid+'/'+token
+            send_password_reset_email(user.email, link)
+            return obj
+        else :
+            raise serializers.ValidationError("Email not found")
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=255, style={'input_type':'password'}, write_only=True)
+    password2 = serializers.CharField(max_length=255, style={'input_type':'password'}, write_only=True)
+    class Meta:
+        fields = ['password', 'password2']
+
+    def validate(self, obj):
+        try:
+            password = obj.get('password')
+            password2 = obj.get('password2')
+            uid = self.context.get('uid')
+            token = self.context.get('token')
+            if password != password2:
+                raise serializers.ValidationError("Password and Confirm Password doesn't match")
+            id = smart_str(urlsafe_base64_decode(uid))
+            user = UserRegistration.objects.get(id=id)
+            if not PasswordResetTokenGenerator().check_token(user, token):
+                raise serializers.ValidationError('Link is expired or invalid.')
+            user.set_password(password)
+            user.save()
+            return obj
+        except Exception:
+            PasswordResetTokenGenerator().check_token(user, token)
+            raise serializers.ValidationError('Link is expired or invalid')
+        

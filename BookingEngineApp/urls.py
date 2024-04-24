@@ -3,7 +3,8 @@ from .views import UserRegister, UserLogin, AddRooms, ShowRooms, UpdateRooms, De
 ResetPassword, AddPackage, ShowPackage, UpdatePackage, DeletePackage, VerifyOTP, AddRoomsCategory, UpdateRoomsCategory, ShowRoomsCategory, DeleteUserDetails, \
 DeleteRoomsCategory, AddFacilities, ShowFacilities, DeleteFacilities, UpdateFacilities, ShowSpecificRoomsCategory, ShowSpecificRoom, RoomCategoryDetails, \
 ShowSpecificPackage, AddContact, ShowBookings, CalculatePrice, LoyaltyBookings, KhaltiApiView, PackagesApiView, CountDetailsView, TopBookingsView, ShowContact,\
-DeleteContact, DeleteBookings, ShowPaymentHistory, GetNotificationsView, CountUnseenNotificationsView, SeeNotificationsView, SendQueryReply, ShowAllBookings
+DeleteContact, DeleteBookings, ShowPaymentHistory, GetNotificationsView, CountUnseenNotificationsView, SeeNotificationsView, SendQueryReply, ShowAllBookings, \
+SendPasswordResetEmailView, ResetPasswordView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
@@ -35,6 +36,8 @@ urlpatterns = [
     path('updatepersonaldetails/<int:id>/',UpdatePersonalDetails.as_view(),name="update_personal_details"),
 
     path('resetpassword/',ResetPassword.as_view(),name="reset_password"),
+    path("send_reset_password_email/",SendPasswordResetEmailView.as_view(), name="reset-password-email"),
+    path("reset_password/<str:uid>/<str:token>/",ResetPasswordView.as_view(), name="reset-password"),
 
     path('addpackage/',AddPackage.as_view(),name="add_package"),
     path('showpackage/',ShowPackage.as_view(),name="show_package"),
@@ -46,7 +49,6 @@ urlpatterns = [
     path('showcontact/',ShowContact.as_view(),name="show_contact"),
     path('deletecontact/<int:id>/',DeleteContact.as_view(),name="delete_contact"),
     path('sendqueryreply/',SendQueryReply.as_view(),name="query_reply"),
-
 
     path('loyaltybookings/',LoyaltyBookings.as_view(),name="loyalty_bookings"),
     path('calculatetotals/',CalculatePrice.as_view(),name="calculate_price"),

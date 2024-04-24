@@ -5,7 +5,7 @@ from rest_framework.decorators import APIView
 from BookingEngineApp.models import UserRegistration
 from BookingEngineApp.serializers import UserRegisterSerializer, UserLoginSerializer, RoomSerializer, ResetPasswordSerializer, PackageSerializer, \
      VerifyAccountSerializer, BookingSerializer, ProfileSerializer, RoomCategorySerializer, FacilitySerializer, ContactSerializer, KhaltiSerializer, \
-     KhaltiSerializerAfterInitiate, PaymentHistorySerializer, NotificationSerializer
+     KhaltiSerializerAfterInitiate, PaymentHistorySerializer, NotificationSerializer, SendPasswordResetEmailSerializer, ForgotPasswordSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from BookingEngineApp.models import Room, RoomCategory, Facility, UserRegistration, Package, Booking, Contact, PaymentHistory, Notification
@@ -25,7 +25,6 @@ import calendar
 from django.utils import timezone
 from django.db.models import Count
 from django.db.models.functions import ExtractMonth
-from rest_framework.pagination import PageNumberPagination
 
 
 # User Register
@@ -146,14 +145,11 @@ class AddRoomsCategory(APIView):
         return Response(serializer.errors, status=400)
 
     
-class ShowRoomsCategory(APIView, PageNumberPagination):
-
-    page_size = 4
+class ShowRoomsCategory(APIView):
 
     def get(self,request):
         roomscategory = RoomCategory.objects.all()
-        results = self.paginate_queryset(roomscategory, request, view=self)
-        serializer = RoomCategorySerializer(results, many = True)
+        serializer = RoomCategorySerializer(roomscategory, many = True)
         return Response(serializer.data)
 
 
@@ -226,14 +222,11 @@ class AddRooms(APIView):
         return Response(serializer.errors, status=400)
 
 
-class ShowRooms(APIView,PageNumberPagination):
-
-    page_size = 4
+class ShowRooms(APIView):
 
     def get(self,request):
         rooms = Room.objects.all()
-        results = self.paginate_queryset(rooms, request, view=self)
-        serializer = RoomSerializer(results, many = True)
+        serializer = RoomSerializer(rooms, many = True)
         return Response(serializer.data)
 
 
@@ -390,6 +383,25 @@ class ResetPassword(APIView):
             return Response({'error': 'Invalid Old Password!'}, status=400)
         return Response(serializer.errors, status=400)
     
+
+# Forgot Password
+
+class SendPasswordResetEmailView(APIView):
+    def post(self, request):
+        serializer = SendPasswordResetEmailSerializer(data = request.data)
+        if serializer.is_valid():
+            return Response("Password Reset Link Sent.", status= 201)
+        print(serializer.errors)
+        return Response(serializer.errors, status= 400)
+
+
+class ResetPasswordView(APIView):
+    def post(self, request, uid, token):
+        serializer = ForgotPasswordSerializer(data = request.data, context ={"uid": uid, "token":token})
+        if serializer.is_valid():
+            return Response("Password Reset Successfully.", status=200)
+        return Response(serializer.errors, status=400)
+
 
 # Upload Packages in Admin Panel
 
@@ -963,7 +975,7 @@ class PackagesApiView(APIView):
                     return Response({'message': 'Package cannot be found.'}, status=400)
 
                 if not self.is_room_available(package.room, check_in, check_out):
-                    return Response({'message': 'Specified room is not available for the given dates.'}, status=400)
+                    return Response({'message': 'Specified Package is not available for the given dates.'}, status=400)
                 
 
                 # verifying dates and days

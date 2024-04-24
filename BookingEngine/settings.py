@@ -94,8 +94,12 @@ WSGI_APPLICATION = 'BookingEngine.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'bookingEngine', 
+        'USER': 'postgres',
+        'PASSWORD': 'codehimalaya',
+        'HOST': '127.0.0.1', 
+        'PORT': '5432',
     }
 }
 
@@ -146,13 +150,6 @@ MEDIA_URL = '/media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_HOST_USER = 'bookingengine.mails@gmail.com'  
-EMAIL_HOST_PASSWORD = 'vrepovowfvtuzpre'  
-EMAIL_USE_TLS = True
-
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
@@ -169,6 +166,7 @@ REST_FRAMEWORK = {
     ],
 
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE' : 3
 }
 
 SIMPLE_JWT = {
@@ -183,3 +181,11 @@ KHALTI_INITIATE_URL = "https://a.khalti.com/api/v2/epayment/initiate/"
 KHALTI_LOOK_URL = "https://a.khalti.com/api/v2/epayment/lookup/"
 PAYMENT_SUCCESS_URL = "http://127.0.0.1:8000/"
 PAYMENT_FAILED_URL = "http://127.0.0.1:8000/"
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'bookingengine.mails@gmail.com'  
+EMAIL_HOST_PASSWORD = 'vrepovowfvtuzpre'  
+EMAIL_USE_TLS = True

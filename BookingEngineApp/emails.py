@@ -27,3 +27,11 @@ def send_query_reply(email, reply):
         return True, "Reply sent successfully."
     except Exception as e:
         return False, f"Error sending reply: {str(e)}"
+
+
+def send_password_reset_email(email, link):
+    subject = "Reset Password Link"
+    message = "Please click on this link to reset the password: " + link
+    email_from = settings.EMAIL_HOST_USER
+    send_mail(subject,message,email_from,[email])
+
